@@ -66,3 +66,27 @@
     )
   )
 )
+
+;; Public functions
+
+;; Submit a new contribution proposal
+(define-public (submit-proposal (content-hash (buff 32)))
+  (let
+    (
+      (proposal-id (+ (var-get current-proposal-id) u1))
+    )
+    (map-set proposals proposal-id
+      {
+        contributor: tx-sender,
+        content-hash: content-hash,
+        voting-start: block-height,
+        yes-votes: u0,
+        no-votes: u0,
+        processed: false
+      }
+    )
+    (var-set current-proposal-id proposal-id)
+    (ok proposal-id)
+  )
+)
+
