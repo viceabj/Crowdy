@@ -90,3 +90,22 @@
   )
 )
 
+;; Cast a vote on a proposal
+(define-public (vote (proposal-id uint) (support bool))
+  (let
+    (
+      (proposal (unwrap! (get-proposal proposal-id) ERR-INVALID-PROPOSAL))
+    )
+    (asserts! (is-proposal-active proposal-id) ERR-PROPOSAL-EXPIRED)
+    (asserts! (is-none (get-vote proposal-id tx-sender)) ERR-ALREADY-VOTED)
+
+    (map-set user-votes {proposal-id: proposal-id, voter: tx-sender} support)
+    (if support
+      (map-set proposals proposal-id
+        (merge proposal {yes-votes: (+ (get yes-votes proposal) u1)}))
+      (map-set proposals proposal-id
+        (merge proposal {no-votes: (+ (get no-votes proposal) u1)}))
+    )
+    (ok true)
+  )
+)
