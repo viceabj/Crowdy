@@ -109,3 +109,38 @@
     (ok true)
   )
 )
+
+;; Process a proposal after voting period ends
+(define-public (process-proposal (proposal-id uint))
+  (let
+    (
+      (proposal (unwrap! (get-proposal proposal-id) ERR-INVALID-PROPOSAL))
+      (total-votes (+ (get yes-votes proposal) (get no-votes proposal)))
+      (approval-percentage (/ (* (get yes-votes proposal) u100) total-votes))
+    )
+    (asserts! (not (is-proposal-active proposal-id)) ERR-PROPOSAL-ACTIVE)
+    (asserts! (not (get processed proposal)) ERR-INVALID-PROPOSAL)
+    (asserts! (>= total-votes MINIMUM-VOTES) ERR-INVALID-PROPOSAL)
+
+    (if (>= approval-percentage ACCEPTANCE-THRESHOLD)
+      (let
+        (
+          (contribution-id (+ (var-get total-contributions) u1))
+        )
+        (map-set contributions contribution-id
+          {
+            contributor: (get contributor proposal),
+            content-hash: (get content-hash proposal),
+            timestamp: block-height,
+            accepted: true
+          }
+        )
+        (var-set total-contributions contribution-id)
+      )
+      false
+    )
+
+    (map-set proposals proposal-id (merge proposal {processed: true}))
+    (ok true)
+  )
+)
